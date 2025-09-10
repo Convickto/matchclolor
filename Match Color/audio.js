@@ -3,7 +3,7 @@ class AudioSystem {
     constructor() {
         this.audioContext = null;
         this.sounds = {};
-        this.musicVolume = 0.3;
+        this.musicVolume = 0.1;
         this.sfxVolume = 0.7;
         this.musicEnabled = true;
         this.sfxEnabled = true;
