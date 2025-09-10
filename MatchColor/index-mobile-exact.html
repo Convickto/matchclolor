@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Match Colors - Mobile Exact Copy</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 10px; /* Reduzido o padding geral */
+            box-sizing: border-box;
+            transition: background-color 0.2s;
+            /* Mobile optimizations */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body.flash-red {
+            background-color: #ffcccc;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.2em; /* Ajuste para caber melhor */
+        }
+
+        .level-select-wrapper {
+            margin-bottom: 15px; /* Espaço para o seletor de nível */
+        }
+
+        #level-select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            -webkit-appearance: none; /* Remove estilo padrão em alguns browsers */
+            -moz-appearance: none;
+            appearance: none;
+            background-color: white;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            padding: 10px 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 1.4em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        #color-to-match {
+            width: 25px;
+            height: 25px;
+            border-radius: 5px;
+            border: 2px solid #333;
+            box-sizing: border-box;
+        }
+
+        #game-container {
+            position: relative;
+            display: grid;
+            gap: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            border-radius: 12px;
+            padding: 15px;
+            background-color: #fff;
+            max-width: 90vw;
+            width: 500px;
+        }
+
+        @media (max-width: 540px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            .info-item {
+                font-size: 1.2em;
+                margin: 5px 0;
+            }
+            .info-bar {
+                flex-direction: row;
+                justify-content: space-evenly;
+                gap: 5px;
+            }
+            #game-container {
+                width: 90vw;
+                padding: 10px;
+                gap: 8px;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            .info-bar {
+                flex-direction: column;
+            }
+        }
+
+        .square {
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            aspect-ratio: 1 / 1;
+            /* Mobile optimizations */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        #game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.85); /* Fundo semi-transparente */
+            border-radius: 12px;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0; /* Inicialmente invisível */
+            pointer-events: none; /* Não interfere com cliques no jogo */
+            transition: opacity 0.3s ease;
+        }
+
+        #game-overlay.visible {
+            opacity: 1;
+            pointer-events: auto; /* Permite interação quando visível */
+        }
+
+        #final-score {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        #game-over-message {
+            font-size: 1.2em;
+            font-style: italic;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+
+        #restart-button {
+            padding: 12px 25px;
+            font-size: 1.1em; /* Um pouco maior */
+            font-weight: 600;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #restart-button:hover {
+            background-color: #2980b9;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Match Colors - Mobile Exact Copy</h1>
+
+    <div class="level-select-wrapper" id="level-select-wrapper">
+        Nível:
+        <select id="level-select">
+            <option value="easy">Fácil (2x2)</option>
+            <option value="normal" selected>Normal (3x3)</option>
+            <option value="hard">Difícil (4x4)</option>
+            <option value="insane">Insano (5x5)</option>
+            <option value="zen">Zen (Sem Tempo)</option>
+        </select>
+    </div>
+
+    <div class="info-bar" id="info-bar">
+        <div class="info-item" id="timer-display">
+            Tempo: <span id="timer">30</span>s
+        </div>
+        <div class="info-item">
+            Vidas: <span id="lives">3</span>
+        </div>
+        <div class="info-item">
+            Cor a achar: <div id="color-to-match"></div>
+        </div>
+        <div class="info-item">
+            Pontos: <span id="score">0</span>
+        </div>
+    </div>
+    
+    <div id="game-container">
+        <div id="game-overlay">
+            <div id="final-score"></div>
+            <div id="game-over-message"></div>
+            <button id="restart-button">Iniciar Jogo</button>
+        </div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const livesElement = document.getElementById('lives');
+        const finalScoreElement = document.getElementById('final-score');
+        const gameOverMessageElement = document.getElementById('game-over-message');
+        const restartButton = document.getElementById('restart-button');
+        const levelSelect = document.getElementById('level-select');
+        const levelSelectWrapper = document.getElementById('level-select-wrapper');
+        const timerDisplay = document.getElementById('timer-display');
+        const colorToMatchElement = document.getElementById('color-to-match');
+        const infoBar = document.getElementById('info-bar');
+        const gameOverlay = document.getElementById('game-overlay');
+        
+        const zenLevels = ['easy', 'normal', 'hard', 'insane'];
+        const levelMap = {
+            easy: 2,
+            normal: 3,
+            hard: 4,
+            insane: 5
+        };
+        
+        let score = 0;
+        let timeLeft = 30;
+        let lives = 3;
+        let timerInterval;
+        let gameActive = false;
+        let gridSize;
+        let differentSquaresCount = 1;
+        let zenLevelIndex = 0;
+        let correctClicksThisRound = 0;
+        let baseColor = '';
+
+        function getRandomHexColor() {
+            return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        }
+
+        function getComplementaryColor(hex) {
+            const r = parseInt(hex.substring(1, 3), 16);
+            const g = parseInt(hex.substring(3, 5), 16);
+            const b = parseInt(hex.substring(5, 7), 16);
+            
+            const rComp = 255 - r;
+            const gComp = 255 - g;
+            const bComp = 255 - b;
+
+            return `#${rComp.toString(16).padStart(2, '0')}${gComp.toString(16).padStart(2, '0')}${bComp.toString(16).padStart(2, '0')}`;
+        }
+
+        function flashRed() {
+            document.body.classList.add('flash-red');
+            setTimeout(() => {
+                document.body.classList.remove('flash-red');
+            }, 300);
+        }
+        
+        function handleCorrectClick(square) {
+            score++;
+            scoreElement.textContent = score;
+            correctClicksThisRound++;
+
+            // MUDANÇA INSTANTÂNEA - SEM VERIFICAÇÃO REDUNDANTE
+            square.style.backgroundColor = baseColor;
+            square.dataset.isDifferent = 'false';
+            square.style.cursor = 'default';
+
+            if (correctClicksThisRound === differentSquaresCount) {
+                if (levelSelect.value === 'zen') {
+                    handleZenProgression(gridSize * gridSize);
+                } else {
+                    handleTimedProgression();
+                }
+            }
+        }
+
+        function handleIncorrectClick() {
+            if (lives > 0) {
+                lives--;
+                livesElement.textContent = lives;
+                flashRed();
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(200); 
+                }
+                if (lives === 0) {
+                    endGame('Suas vidas acabaram!');
+                }
+            }
+        }
+        
+        function updateBoard() {
+            if (!gameActive) return;
+
+            gameContainer.innerHTML = ''; // Limpa apenas os quadrados, não o overlay
+            const totalSquares = gridSize * gridSize;
+            baseColor = getRandomHexColor();
+            const differentColor = getComplementaryColor(baseColor);
+            
+            colorToMatchElement.style.backgroundColor = differentColor;
+
+            correctClicksThisRound = 0;
+            
+            const differentIndexes = new Set();
+            while (differentIndexes.size < differentSquaresCount) {
+                differentIndexes.add(Math.floor(Math.random() * totalSquares));
+            }
+
+            for (let i = 0; i < totalSquares; i++) {
+                const square = document.createElement('div');
+                square.classList.add('square');
+                square.dataset.isDifferent = differentIndexes.has(i);
+                
+                if (square.dataset.isDifferent === 'true') {
+                    square.style.backgroundColor = differentColor;
+                } else {
+                    square.style.backgroundColor = baseColor;
+                }
+                
+                square.addEventListener('click', () => {
+                    if (!gameActive) return;
+                    if (square.dataset.isDifferent === 'true') {
+                        handleCorrectClick(square);
+                    } else {
+                        handleIncorrectClick();
+                    }
+                });
+                gameContainer.appendChild(square);
+            }
+
+            // Garante que o overlay esteja na frente dos quadrados
+            gameContainer.appendChild(gameOverlay);
+        }
+
+        function handleZenProgression(totalSquares) {
+            zenClicksCounter++;
+
+            if (zenClicksCounter % 10 === 0 && differentSquaresCount < totalSquares - 1) {
+                differentSquaresCount++;
+            }
+
+            if (differentSquaresCount === totalSquares - 1) {
+                if (zenLevelIndex < zenLevels.length - 1) {
+                    zenLevelIndex++;
+                    gridSize = levelMap[zenLevels[zenLevelIndex]];
+                    differentSquaresCount = 1;
+                    gameContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+                    gameContainer.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+                } else {
+                    endZenMode();
+                    return;
+                }
+            }
+            setTimeout(updateBoard, 500);
+        }
+
+        function handleTimedProgression() {
+            differentSquaresCount++;
+            if (differentSquaresCount === (gridSize * gridSize)) {
+                differentSquaresCount = 1;
+            }
+            setTimeout(updateBoard, 500);
+        }
+
+        function handleTimer() {
+            if (!gameActive) return;
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                endGame('Tempo esgotado!');
+            }
+        }
+
+        function endGame(message) {
+            gameActive = false;
+            clearInterval(timerInterval);
+            finalScoreElement.textContent = `Pontuação final: ${score}`;
+            gameOverMessageElement.textContent = message;
+            restartButton.textContent = 'Jogar Novamente';
+            gameOverlay.classList.add('visible');
+            levelSelectWrapper.classList.remove('hidden'); // Mostra o seletor de nível novamente
+        }
+
+        function endZenMode() {
+            gameActive = false;
+            finalScoreElement.textContent = `Pontuação final: ${score}`;
+            gameOverMessageElement.textContent = 'Parabéns, você deve ter relaxado bastante...';
+            restartButton.textContent = 'Jogar Novamente';
+            gameOverlay.classList.add('visible');
+            levelSelectWrapper.classList.remove('hidden'); // Mostra o seletor de nível novamente
+        }
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            timeLeft = 30;
+            lives = 3;
+            differentSquaresCount = 1;
+            zenClicksCounter = 0;
+            zenLevelIndex = 0;
+            
+            if (levelSelect.value === 'zen') {
+                gridSize = levelMap[zenLevels[zenLevelIndex]];
+                timerDisplay.classList.add('hidden');
+                clearInterval(timerInterval);
+            } else {
+                gridSize = levelMap[levelSelect.value];
+                timerDisplay.classList.remove('hidden');
+                clearInterval(timerInterval);
+                timerInterval = setInterval(handleTimer, 1000);
+            }
+            
+            gameContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            gameContainer.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            timerElement.textContent = timeLeft;
+            gameOverlay.classList.remove('visible');
+            levelSelectWrapper.classList.add('hidden');
+            
+            updateBoard();
+        }
+
+        // Mobile optimizations
+        function setupMobileOptimizations() {
+            // Prevent zoom on double tap
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', (e) => {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    e.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+
+            // Prevent context menu on long press
+            document.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            // Optimize touch events
+            document.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // Prevent text selection with mouse
+            document.addEventListener('selectstart', (e) => {
+                e.preventDefault();
+            });
+
+            // Prevent drag and drop
+            document.addEventListener('dragstart', (e) => {
+                e.preventDefault();
+            });
+
+            // Prevent copy/paste shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'a') e.preventDefault();
+                if (e.ctrlKey && e.key === 'c') e.preventDefault();
+                if (e.ctrlKey && e.key === 'v') e.preventDefault();
+                if (e.ctrlKey && e.key === 'x') e.preventDefault();
+                if (e.key === 'F12') e.preventDefault();
+                if (e.ctrlKey && e.shiftKey && e.key === 'I') e.preventDefault();
+            });
+
+            // Prevent mouse selection
+            document.addEventListener('mousedown', (e) => {
+                if (!e.target.matches('input, textarea, select')) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // Initialize game when page loads
+        window.addEventListener('load', () => {
+            gameOverlay.classList.add('visible');
+            levelSelectWrapper.classList.remove('hidden');
+            restartButton.textContent = 'Iniciar Jogo';
+            setupMobileOptimizations();
+        });
+
+        restartButton.addEventListener('click', startGame);
+        levelSelect.addEventListener('change', () => {
+            if (!gameActive) {
+                gridSize = levelMap[levelSelect.value === 'zen' ? zenLevels[zenLevelIndex] : levelSelect.value];
+                gameContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+                gameContainer.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+                
+                if (levelSelect.value === 'zen') {
+                    timerDisplay.classList.add('hidden');
+                } else {
+                    timerDisplay.classList.remove('hidden');
+                }
+
+                gameContainer.innerHTML = '';
+                const totalSquares = gridSize * gridSize;
+                const tempBaseColor = getRandomHexColor();
+                const tempDifferentColor = getComplementaryColor(tempBaseColor);
+                colorToMatchElement.style.backgroundColor = tempDifferentColor;
+
+                const differentIndexes = new Set();
+                while (differentIndexes.size < differentSquaresCount) {
+                    differentIndexes.add(Math.floor(Math.random() * totalSquares));
+                }
+
+                for (let i = 0; i < totalSquares; i++) {
+                    const square = document.createElement('div');
+                    square.classList.add('square');
+                    if (differentIndexes.has(i)) {
+                        square.style.backgroundColor = tempDifferentColor;
+                    } else {
+                        square.style.backgroundColor = tempBaseColor;
+                    }
+                    gameContainer.appendChild(square);
+                }
+                gameContainer.appendChild(gameOverlay);
+            } else {
+                startGame();
+            }
+        });
+        
+        // Prevent zoom on mobile
+        document.addEventListener('gesturestart', (e) => {
+            e.preventDefault();
+        });
+
+        document.addEventListener('gesturechange', (e) => {
+            e.preventDefault();
+        });
+
+        document.addEventListener('gestureend', (e) => {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>
