@@ -71,11 +71,19 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(148,163,184,0.25);
             width: min(88vw, 560px);
             margin: 0 auto;
+            justify-content: center;
+            align-content: center;
         }
 
         @media (max-width: 540px) {
             h1 { font-size: 2rem; }
-            #game-container { width: 92vw; padding: 14px; gap: 10px; }
+            #game-container { 
+                width: 95vw; 
+                padding: 16px; 
+                gap: 8px;
+                justify-content: center;
+                align-content: center;
+            }
             .info-item { font-size: 0.95rem; }
         }
 
@@ -266,8 +274,13 @@
             // Duplica as cores para formar pares e embaralha
             const shuffledColors = shuffle([...cardColors, ...cardColors]);
 
-            const sizePx = Math.floor(Math.min(520, window.innerWidth * 0.82));
-            const cell = Math.floor((sizePx - (gridSize - 1) * 12 - 40) / gridSize);
+            // Calcula tamanho responsivo
+            const isMobile = window.innerWidth <= 540;
+            const containerWidth = isMobile ? window.innerWidth * 0.95 : Math.min(520, window.innerWidth * 0.82);
+            const padding = isMobile ? 32 : 40; // 16px * 2 no mobile, 20px * 2 no desktop
+            const gap = isMobile ? 8 : 12;
+            
+            const cell = Math.floor((containerWidth - padding - (gridSize - 1) * gap) / gridSize);
             gameContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${cell}px)`;
             gameContainer.style.gridTemplateRows = `repeat(${gridSize}, ${cell}px)`;
 
