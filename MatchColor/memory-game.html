@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Memory Zen</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +21,8 @@
             color: #e5e7eb;
             padding: 16px;
             box-sizing: border-box;
+            overflow-x: hidden;
+            width: 100%;
         }
 
         h1 {
@@ -77,17 +79,41 @@
 
         @media (max-width: 540px) {
             h1 { font-size: 2rem; }
+            body {
+                overflow-x: hidden;
+                padding: 8px;
+                margin: 0;
+            }
             #game-container { 
-                width: 100vw; 
-                max-width: 100vw;
-                padding: 12px; 
-                gap: 6px;
+                width: 100%;
+                max-width: 100%;
+                padding: 8px; 
+                gap: 4px;
                 justify-content: center;
                 align-content: center;
                 margin: 0;
                 border-radius: 0;
+                box-sizing: border-box;
             }
-            .info-item { font-size: 0.95rem; }
+            .info-item { font-size: 0.9rem; }
+            .info-bar {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            h1 { font-size: 1.8rem; }
+            body { padding: 4px; }
+            #game-container { 
+                padding: 4px; 
+                gap: 2px;
+            }
+            .info-item { font-size: 0.8rem; }
+            .info-bar {
+                padding: 6px 8px;
+                gap: 6px;
+            }
         }
 
         .card {
@@ -295,15 +321,30 @@
         function resizeGrid() {
             // Apenas recalcula o tamanho do grid sem regenerar o conteúdo
             const isMobile = window.innerWidth <= 540;
+            const isTablet = window.innerWidth <= 768 && window.innerWidth > 540;
             
             if (isMobile) {
-                // Mobile: ocupa 100% da largura
-                const containerWidth = window.innerWidth;
-                const padding = 24; // 12px * 2
-                const gap = 6;
+                // Mobile: ocupa 100% da largura com margem de segurança
+                const containerWidth = window.innerWidth - 16; // 8px margin de cada lado
+                const padding = 16; // 8px * 2
+                const gap = 4;
                 const cell = Math.floor((containerWidth - padding - (gridSize - 1) * gap) / gridSize);
                 gameContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${cell}px)`;
                 gameContainer.style.gridTemplateRows = `repeat(${gridSize}, ${cell}px)`;
+                gameContainer.style.width = `${containerWidth}px`;
+                gameContainer.style.height = 'auto';
+            } else if (isTablet) {
+                // Tablet: tamanho médio
+                const maxWidth = window.innerWidth - 60;
+                const maxHeight = window.innerHeight - 180;
+                const availableSize = Math.min(maxWidth, maxHeight);
+                const padding = 30;
+                const gap = 8;
+                const cell = Math.floor((availableSize - padding - (gridSize - 1) * gap) / gridSize);
+                gameContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${cell}px)`;
+                gameContainer.style.gridTemplateRows = `repeat(${gridSize}, ${cell}px)`;
+                gameContainer.style.width = `${availableSize}px`;
+                gameContainer.style.height = `${availableSize}px`;
             } else {
                 // PC: ocupa toda a tela disponível
                 const maxWidth = window.innerWidth - 40; // 20px margin de cada lado
