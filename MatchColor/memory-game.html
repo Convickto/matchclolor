@@ -78,11 +78,14 @@
         @media (max-width: 540px) {
             h1 { font-size: 2rem; }
             #game-container { 
-                width: 95vw; 
-                padding: 16px; 
-                gap: 8px;
+                width: 100vw; 
+                max-width: 100vw;
+                padding: 12px; 
+                gap: 6px;
                 justify-content: center;
                 align-content: center;
+                margin: 0;
+                border-radius: 0;
             }
             .info-item { font-size: 0.95rem; }
         }
@@ -237,6 +240,15 @@
             '#F9C74F', '#43AA8B', '#B8BEDD', '#6A4C93', '#F4978E', '#90A4AE', '#6D6875', '#B0D8A4'
         ];
 
+        const emojis = [
+            '🎮', '🎯', '🎪', '🎨', '🎭', '🎪', '🎸', '🎺', '🎻', '🥁',
+            '🎤', '🎧', '🎵', '🎶', '🎼', '🎹', '🎺', '🎻', '🎸', '🥁',
+            '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🏵️', '🎗️', '🎀', '🎁',
+            '🎂', '🍰', '🧁', '🍭', '🍬', '🍫', '🍩', '🍪', '🍯', '🍯',
+            '🌟', '⭐', '✨', '💫', '🌠', '☄️', '🌌', '🌙', '🌛', '🌜',
+            '🌝', '🌞', '🌚', '🌕', '🌖', '🌗', '🌘', '🌑', '🌒', '🌓'
+        ];
+
         function getRandomHexColor() {
             return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
         }
@@ -256,39 +268,45 @@
             if (gridSize > 10) gridSize = 10;
 
             totalPairs = (gridSize * gridSize) / 2;
-            if (totalPairs % 1 !== 0) { // Garante que o número de cartas seja par
-                gridSize++;
-                totalPairs = (gridSize * gridSize) / 2;
-            }
+            
 
-            // Gera cores únicas para cada par
-            const cardColors = [];
+            // Gera cores e emojis únicos para cada par
+            const cardData = [];
             for (let i = 0; i < totalPairs; i++) {
                 let color;
                 do {
                     color = getRandomHexColor();
-                } while (cardColors.includes(color));
-                cardColors.push(color);
+                } while (cardData.some(item => item.color === color));
+                
+                const emoji = emojis[i % emojis.length];
+                cardData.push({ color, emoji });
             }
             
-            // Duplica as cores para formar pares e embaralha
-            const shuffledColors = shuffle([...cardColors, ...cardColors]);
+            // Duplica os dados para formar pares e embaralha
+            const shuffledData = shuffle([...cardData, ...cardData]);
 
             // Calcula tamanho responsivo
             const isMobile = window.innerWidth <= 540;
-            const containerWidth = isMobile ? window.innerWidth * 0.95 : Math.min(520, window.innerWidth * 0.82);
-            const padding = isMobile ? 32 : 40; // 16px * 2 no mobile, 20px * 2 no desktop
-            const gap = isMobile ? 8 : 12;
+            const containerWidth = isMobile ? window.innerWidth : Math.min(520, window.innerWidth * 0.82);
+            const padding = isMobile ? 24 : 40; // 12px * 2 no mobile, 20px * 2 no desktop
+            const gap = isMobile ? 6 : 12;
             
             const cell = Math.floor((containerWidth - padding - (gridSize - 1) * gap) / gridSize);
             gameContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${cell}px)`;
             gameContainer.style.gridTemplateRows = `repeat(${gridSize}, ${cell}px)`;
 
-            for (let i = 0; i < shuffledColors.length; i++) {
+            for (let i = 0; i < shuffledData.length; i++) {
                 const card = document.createElement('div');
                 card.classList.add('card');
-                card.dataset.color = shuffledColors[i];
+                card.dataset.color = shuffledData[i].color;
+                card.dataset.emoji = shuffledData[i].emoji;
                 card.style.background = '#0b1020'; // Inicia com cor escura
+                card.textContent = shuffledData[i].emoji; // Adiciona o emoji
+                card.style.fontSize = 'clamp(1.5rem, 4vw, 2.5rem)'; // Tamanho responsivo do emoji
+                card.style.display = 'flex';
+                card.style.alignItems = 'center';
+                card.style.justifyContent = 'center';
+                card.style.color = 'transparent'; // Emoji invisível inicialmente
 
                 card.addEventListener('click', flipCard);
                 gameContainer.appendChild(card);
@@ -322,9 +340,11 @@
         function unflipCards() {
             isBoardLocked = true;
             setTimeout(() => {
-                // Esconde as cores novamente
+                // Esconde as cores e emojis novamente
                 firstCard.style.background = '#0b1020';
                 secondCard.style.background = '#0b1020';
+                firstCard.style.color = 'transparent'; // Esconde o emoji
+                secondCard.style.color = 'transparent'; // Esconde o emoji
                 firstCard.classList.remove('flipped');
                 secondCard.classList.remove('flipped');
                 resetBoard();
@@ -340,8 +360,9 @@
             if (isBoardLocked) return;
             if (this === firstCard) return;
 
-            // Mostra a cor do card
+            // Mostra a cor e o emoji do card
             this.style.background = this.dataset.color;
+            this.style.color = 'white'; // Mostra o emoji
             this.classList.add('flipped');
 
             if (!firstCard) {
@@ -441,10 +462,9 @@
         window.addEventListener('load', () => {
             gameOverlay.classList.add('visible');
             restartButton.textContent = 'Iniciar Jogo';
+            restartButton.onclick = startGame;
             generateBoard();
         });
-
-        restartButton.addEventListener('click', startGame);
 
         function startTick() {
             stopTick();
