@@ -239,6 +239,113 @@
             border-color: rgba(34,197,94,0.5);
             color: #22c55e;
         }
+
+        /* Moldura de referência com emojis */
+        .reference-frame {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148,163,184,0.15);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 0 40px rgba(99,102,241,0.04);
+            margin-bottom: 14px;
+            backdrop-filter: blur(6px);
+            max-width: 90%;
+        }
+
+        .reference-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin: 0;
+        }
+
+        .reference-emojis {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .reference-emoji {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(30,41,59,0.8);
+            border: 1px solid rgba(148,163,184,0.2);
+            font-size: 1.4rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .reference-emoji.found {
+            background: rgba(34,197,94,0.2);
+            border-color: rgba(34,197,94,0.4);
+            opacity: 0.6;
+            transform: scale(0.9);
+        }
+
+        .reference-emoji.found::after {
+            content: '✓';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 16px;
+            height: 16px;
+            background: #22c55e;
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        @media (max-width: 540px) {
+            .reference-frame {
+                padding: 8px 12px;
+                margin-bottom: 10px;
+            }
+            
+            .reference-title {
+                font-size: 0.8rem;
+            }
+            
+            .reference-emoji {
+                width: 32px;
+                height: 32px;
+                font-size: 1.1rem;
+            }
+            
+            .reference-emojis {
+                gap: 6px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .reference-frame {
+                padding: 6px 8px;
+                margin-bottom: 8px;
+            }
+            
+            .reference-emoji {
+                width: 28px;
+                height: 28px;
+                font-size: 1rem;
+            }
+            
+            .reference-emojis {
+                gap: 4px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -253,6 +360,12 @@
             <button class="audio-toggle-btn" id="music-toggle" title="Música">🎵</button>
             <button class="audio-toggle-btn" id="sfx-toggle" title="Efeitos Sonoros">🔊</button>
         </div>
+    </div>
+
+    <!-- Moldura de referência com emojis -->
+    <div class="reference-frame" id="reference-frame">
+        <div class="reference-title">Encontre estes emojis:</div>
+        <div class="reference-emojis" id="reference-emojis"></div>
     </div>
     
     <div id="game-container">
@@ -278,6 +391,7 @@
         const gameOverlay = document.getElementById('game-overlay');
         const musicToggle = document.getElementById('music-toggle');
         const sfxToggle = document.getElementById('sfx-toggle');
+        const referenceEmojis = document.getElementById('reference-emojis');
         
         let gridSize;
         let pairsFound = 0;
@@ -289,6 +403,7 @@
         let levelStartTs = null;
         let tick = null;
         let audioSystem = null;
+        let currentLevelEmojis = []; // Array para armazenar os emojis do nível atual
 
         const bestTimes = new Map(); // level -> [best..worst]
 
@@ -316,6 +431,92 @@
                 [array[i], array[j]] = [array[j], array[i]];
             }
             return array;
+        }
+
+        function createReferenceFrame(cardData) {
+            referenceEmojis.innerHTML = '';
+            currentLevelEmojis = [];
+            
+            // Cria elementos de referência para cada emoji único
+            cardData.forEach((item, index) => {
+                const emojiElement = document.createElement('div');
+                emojiElement.classList.add('reference-emoji');
+                emojiElement.textContent = item.emoji;
+                emojiElement.dataset.emoji = item.emoji;
+                emojiElement.dataset.color = item.color;
+                emojiElement.id = `ref-emoji-${index}`;
+                
+                referenceEmojis.appendChild(emojiElement);
+                currentLevelEmojis.push({
+                    element: emojiElement,
+                    emoji: item.emoji,
+                    color: item.color,
+                    found: false
+                });
+            });
+        }
+
+        function markEmojiAsFound(emoji, color) {
+            const emojiRef = currentLevelEmojis.find(item => 
+                item.emoji === emoji && item.color === color && !item.found
+            );
+            
+            if (emojiRef) {
+                emojiRef.found = true;
+                emojiRef.element.classList.add('found');
+            }
+        }
+
+        function showAllEmojisPreview() {
+            const cards = document.querySelectorAll('.card');
+            
+            // Bloqueia a interação durante a prévia
+            isBoardLocked = true;
+            
+            // Mostra todos os emojis e cores
+            cards.forEach(card => {
+                card.style.background = card.dataset.color;
+                card.style.color = 'white';
+                card.classList.add('flipped');
+            });
+            
+            // Adiciona efeito visual de "memorize"
+            const previewOverlay = document.createElement('div');
+            previewOverlay.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: #f8fafc;
+                padding: 12px 24px;
+                border-radius: 12px;
+                font-size: 1.2rem;
+                font-weight: 600;
+                z-index: 1000;
+                border: 2px solid rgba(99, 102, 241, 0.5);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(8px);
+            `;
+            previewOverlay.textContent = 'Memorize as posições...';
+            gameContainer.appendChild(previewOverlay);
+            
+            // Esconde novamente após 3 segundos
+            setTimeout(() => {
+                cards.forEach(card => {
+                    card.style.background = '#0b1020';
+                    card.style.color = 'transparent';
+                    card.classList.remove('flipped');
+                });
+                
+                // Remove o overlay de memorização
+                if (previewOverlay.parentNode) {
+                    previewOverlay.parentNode.removeChild(previewOverlay);
+                }
+                
+                // Desbloqueia a interação
+                isBoardLocked = false;
+            }, 3000);
         }
 
         function resizeGrid() {
@@ -381,6 +582,9 @@
                 cardData.push({ color, emoji });
             }
             
+            // Cria a moldura de referência com os emojis únicos
+            createReferenceFrame(cardData);
+            
             // Duplica os dados para formar pares e embaralha
             const shuffledData = shuffle([...cardData, ...cardData]);
 
@@ -410,6 +614,10 @@
             if (firstCard.dataset.color === secondCard.dataset.color) {
                 // Play correct sound
                 if (audioSystem) audioSystem.playSound('correct');
+                
+                // Marca o emoji como encontrado na moldura de referência
+                markEmojiAsFound(firstCard.dataset.emoji, firstCard.dataset.color);
+                
                 disableCards();
                 pairsFound++;
                 pairsFoundElement.textContent = pairsFound;
@@ -486,11 +694,17 @@
             // Start background music
             if (audioSystem) audioSystem.playMusic('game');
 
-            levelStartTs = Date.now();
-            startTick();
-
             generateBoard();
             addCardListeners();
+            
+            // Mostra prévia dos emojis por 3 segundos antes de iniciar o cronômetro
+            setTimeout(() => {
+                levelStartTs = Date.now();
+                startTick();
+            }, 3000);
+            
+            // Inicia a prévia imediatamente
+            showAllEmojisPreview();
         }
 
         function levelComplete() {
@@ -521,10 +735,18 @@
                 level++;
                 levelElement.textContent = level;
                 pairsFoundElement.textContent = pairsFound;
-                levelStartTs = Date.now();
-                startTick();
+                
                 generateBoard();
                 addCardListeners();
+                
+                // Mostra prévia dos emojis por 3 segundos antes de iniciar o cronômetro
+                setTimeout(() => {
+                    levelStartTs = Date.now();
+                    startTick();
+                }, 3000);
+                
+                // Inicia a prévia imediatamente
+                showAllEmojisPreview();
             };
         }
 
@@ -554,10 +776,18 @@
                 levelElement.textContent = level;
                 pairsFoundElement.textContent = pairsFound;
                 gameOverlay.classList.remove('visible');
-                levelStartTs = Date.now();
-                startTick();
+                
                 generateBoard();
                 addCardListeners();
+                
+                // Mostra prévia dos emojis por 3 segundos antes de iniciar o cronômetro
+                setTimeout(() => {
+                    levelStartTs = Date.now();
+                    startTick();
+                }, 3000);
+                
+                // Inicia a prévia imediatamente
+                showAllEmojisPreview();
             };
         }
 
