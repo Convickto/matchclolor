@@ -275,12 +275,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
             background: rgba(30,41,59,0.8);
             border: 1px solid rgba(148,163,184,0.2);
-            font-size: 1.4rem;
+            font-size: 1.8rem;
             transition: all 0.3s ease;
             position: relative;
         }
@@ -320,9 +320,9 @@
             }
             
             .reference-emoji {
-                width: 32px;
-                height: 32px;
-                font-size: 1.1rem;
+                width: 40px;
+                height: 40px;
+                font-size: 1.4rem;
             }
             
             .reference-emojis {
@@ -337,9 +337,9 @@
             }
             
             .reference-emoji {
-                width: 28px;
-                height: 28px;
-                font-size: 1rem;
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
             }
             
             .reference-emojis {
@@ -413,16 +413,25 @@
         ];
 
         const emojis = [
-            '🎮', '🎯', '🎪', '🎨', '🎭', '🎪', '🎸', '🎺', '🎻', '🥁',
-            '🎤', '🎧', '🎵', '🎶', '🎼', '🎹', '🎺', '🎻', '🎸', '🥁',
-            '🏆', '🥇', '🥈', '🥉', '🏅', '🎖️', '🏵️', '🎗️', '🎀', '🎁',
-            '🎂', '🍰', '🧁', '🍭', '🍬', '🍫', '🍩', '🍪', '🍯', '🍯',
-            '🌟', '⭐', '✨', '💫', '🌠', '☄️', '🌌', '🌙', '🌛', '🌜',
-            '🌝', '🌞', '🌚', '🌕', '🌖', '🌗', '🌘', '🌑', '🌒', '🌓'
+            '😂', '🙃', '🫠', '😉', '😊', '🥰', '😍', '🤩', '😘', '😋',
+            '😜', '🤭', '🫣', '🤔', '🤨', '😶‍🌫️', '🙄', '😮‍💨', '🙂‍↔️', '🙂‍↕️',
+            '🤤', '🥶', '😎', '🤓', '🙁', '😮', '🥺', '🥹', '😨', '😭',
+            '😱', '🤬', '💀', '☠️', '💩', '🤡', '💔', '❤️‍🔥', '❤️‍🩹', '❤️',
+            '🩷', '🧡', '💛', '💚', '💙', '💜', '🤍', '💬', '💭', '👉',
+            '👇', '☝️', '🫵', '👍', '🙌', '🫶', '🤝', '🙏', '🫀', '👀',
+            '🏋️‍♀️', '🫂', '🦋', '🚨', '🚀', '☀️', '⭐', '🔥', '✨', '🎀',
+            '🧸', '🎭', '👑', '💍', '🎶', '💸', '📈', '📍', '⚖️', '🧿',
+            '🪬', '🗿', '⚠️', '🔞', '⬆️', '➡️', '⬇️', '☯️', '➗', '♾️',
+            '❓', '❗', '⚕️', '✅', '✔️'
         ];
 
         function getRandomHexColor() {
             return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        }
+
+        function getUniqueEmojis() {
+            // Remove duplicatas do array de emojis
+            return [...new Set(emojis)];
         }
 
         function shuffle(array) {
@@ -443,22 +452,20 @@
                 emojiElement.classList.add('reference-emoji');
                 emojiElement.textContent = item.emoji;
                 emojiElement.dataset.emoji = item.emoji;
-                emojiElement.dataset.color = item.color;
                 emojiElement.id = `ref-emoji-${index}`;
                 
                 referenceEmojis.appendChild(emojiElement);
                 currentLevelEmojis.push({
                     element: emojiElement,
                     emoji: item.emoji,
-                    color: item.color,
                     found: false
                 });
             });
         }
 
-        function markEmojiAsFound(emoji, color) {
+        function markEmojiAsFound(emoji) {
             const emojiRef = currentLevelEmojis.find(item => 
-                item.emoji === emoji && item.color === color && !item.found
+                item.emoji === emoji && !item.found
             );
             
             if (emojiRef) {
@@ -470,6 +477,17 @@
         function showAllEmojisPreview() {
             const cards = document.querySelectorAll('.card');
             
+            // Calcula o tempo de exposição baseado no nível
+            const getPreviewTime = (currentLevel) => {
+                if (currentLevel <= 2) return 3000;      // Níveis 1-2: 3 segundos
+                if (currentLevel <= 4) return 2500;      // Níveis 3-4: 2.5 segundos
+                if (currentLevel <= 6) return 2000;      // Níveis 5-6: 2 segundos
+                if (currentLevel <= 8) return 1500;      // Níveis 7-8: 1.5 segundos
+                return 1000;                             // Níveis 9+: 1 segundo
+            };
+            
+            const previewTime = getPreviewTime(level);
+            
             // Bloqueia a interação durante a prévia
             isBoardLocked = true;
             
@@ -480,7 +498,7 @@
                 card.classList.add('flipped');
             });
             
-            // Adiciona efeito visual de "memorize"
+            // Adiciona efeito visual de "memorize" com tempo dinâmico
             const previewOverlay = document.createElement('div');
             previewOverlay.style.cssText = `
                 position: absolute;
@@ -498,10 +516,10 @@
                 box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
                 backdrop-filter: blur(8px);
             `;
-            previewOverlay.textContent = 'Memorize as posições...';
+            previewOverlay.textContent = `Memorize as posições... (${previewTime/1000}s)`;
             gameContainer.appendChild(previewOverlay);
             
-            // Esconde novamente após 3 segundos
+            // Esconde novamente após o tempo calculado
             setTimeout(() => {
                 cards.forEach(card => {
                     card.style.background = '#0b1020';
@@ -516,7 +534,7 @@
                 
                 // Desbloqueia a interação
                 isBoardLocked = false;
-            }, 3000);
+            }, previewTime);
         }
 
         function resizeGrid() {
@@ -570,23 +588,39 @@
             totalPairs = (gridSize * gridSize) / 2;
             
 
-            // Gera cores e emojis únicos para cada par
+            // Gera emojis únicos para cada par (todos com a mesma cor)
             const cardData = [];
+            
+            // Embaralha os emojis únicos para garantir variedade
+            const uniqueEmojis = getUniqueEmojis();
+            const availableEmojis = shuffle([...uniqueEmojis]);
+            
+            // Debug: verifica quantos emojis únicos temos
+            console.log(`Total de emojis únicos disponíveis: ${uniqueEmojis.length}`);
+            console.log(`Pares necessários para este nível: ${totalPairs}`);
+            
+            // Cor única para todos os cards
+            const uniformColor = '#4F46E5'; // Cor roxa consistente
+            
             for (let i = 0; i < totalPairs; i++) {
-                let color;
-                do {
-                    color = getRandomHexColor();
-                } while (cardData.some(item => item.color === color));
+                // Pega o próximo emoji disponível e remove da lista
+                const emoji = availableEmojis.shift();
                 
-                const emoji = emojis[i % emojis.length];
-                cardData.push({ color, emoji });
+                cardData.push({ color: uniformColor, emoji });
             }
             
             // Cria a moldura de referência com os emojis únicos
             createReferenceFrame(cardData);
             
-            // Duplica os dados para formar pares e embaralha
-            const shuffledData = shuffle([...cardData, ...cardData]);
+            // Cria pares únicos - cada emoji aparece exatamente 2 vezes
+            const pairedData = [];
+            cardData.forEach(item => {
+                pairedData.push({...item}); // Primeira instância
+                pairedData.push({...item}); // Segunda instância (par)
+            });
+            
+            // Embaralha os pares
+            const shuffledData = shuffle(pairedData);
 
             // Calcula tamanho responsivo
             resizeGrid();
@@ -598,7 +632,7 @@
                 card.dataset.emoji = shuffledData[i].emoji;
                 card.style.background = '#0b1020'; // Inicia com cor escura
                 card.textContent = shuffledData[i].emoji; // Adiciona o emoji
-                card.style.fontSize = 'clamp(1.5rem, 4vw, 2.5rem)'; // Tamanho responsivo do emoji
+                card.style.fontSize = 'clamp(2.5rem, 6vw, 4rem)'; // Tamanho maior e responsivo do emoji
                 card.style.display = 'flex';
                 card.style.alignItems = 'center';
                 card.style.justifyContent = 'center';
@@ -611,12 +645,12 @@
         }
 
         function checkMatch() {
-            if (firstCard.dataset.color === secondCard.dataset.color) {
+            if (firstCard.dataset.emoji === secondCard.dataset.emoji) {
                 // Play correct sound
                 if (audioSystem) audioSystem.playSound('correct');
                 
                 // Marca o emoji como encontrado na moldura de referência
-                markEmojiAsFound(firstCard.dataset.emoji, firstCard.dataset.color);
+                markEmojiAsFound(firstCard.dataset.emoji);
                 
                 disableCards();
                 pairsFound++;
@@ -697,11 +731,22 @@
             generateBoard();
             addCardListeners();
             
-            // Mostra prévia dos emojis por 3 segundos antes de iniciar o cronômetro
+            // Calcula o tempo de prévia baseado no nível
+            const getPreviewTime = (currentLevel) => {
+                if (currentLevel <= 2) return 3000;      // Níveis 1-2: 3 segundos
+                if (currentLevel <= 4) return 2500;      // Níveis 3-4: 2.5 segundos
+                if (currentLevel <= 6) return 2000;      // Níveis 5-6: 2 segundos
+                if (currentLevel <= 8) return 1500;      // Níveis 7-8: 1.5 segundos
+                return 1000;                             // Níveis 9+: 1 segundo
+            };
+            
+            const previewTime = getPreviewTime(level);
+            
+            // Inicia o cronômetro após a prévia terminar
             setTimeout(() => {
                 levelStartTs = Date.now();
                 startTick();
-            }, 3000);
+            }, previewTime);
             
             // Inicia a prévia imediatamente
             showAllEmojisPreview();
@@ -739,11 +784,22 @@
                 generateBoard();
                 addCardListeners();
                 
-                // Mostra prévia dos emojis por 3 segundos antes de iniciar o cronômetro
+                // Calcula o tempo de prévia baseado no nível
+                const getPreviewTime = (currentLevel) => {
+                    if (currentLevel <= 2) return 3000;      // Níveis 1-2: 3 segundos
+                    if (currentLevel <= 4) return 2500;      // Níveis 3-4: 2.5 segundos
+                    if (currentLevel <= 6) return 2000;      // Níveis 5-6: 2 segundos
+                    if (currentLevel <= 8) return 1500;      // Níveis 7-8: 1.5 segundos
+                    return 1000;                             // Níveis 9+: 1 segundo
+                };
+                
+                const previewTime = getPreviewTime(level);
+                
+                // Inicia o cronômetro após a prévia terminar
                 setTimeout(() => {
                     levelStartTs = Date.now();
                     startTick();
-                }, 3000);
+                }, previewTime);
                 
                 // Inicia a prévia imediatamente
                 showAllEmojisPreview();
@@ -780,11 +836,22 @@
                 generateBoard();
                 addCardListeners();
                 
-                // Mostra prévia dos emojis por 3 segundos antes de iniciar o cronômetro
+                // Calcula o tempo de prévia baseado no nível
+                const getPreviewTime = (currentLevel) => {
+                    if (currentLevel <= 2) return 3000;      // Níveis 1-2: 3 segundos
+                    if (currentLevel <= 4) return 2500;      // Níveis 3-4: 2.5 segundos
+                    if (currentLevel <= 6) return 2000;      // Níveis 5-6: 2 segundos
+                    if (currentLevel <= 8) return 1500;      // Níveis 7-8: 1.5 segundos
+                    return 1000;                             // Níveis 9+: 1 segundo
+                };
+                
+                const previewTime = getPreviewTime(level);
+                
+                // Inicia o cronômetro após a prévia terminar
                 setTimeout(() => {
                     levelStartTs = Date.now();
                     startTick();
-                }, 3000);
+                }, previewTime);
                 
                 // Inicia a prévia imediatamente
                 showAllEmojisPreview();
